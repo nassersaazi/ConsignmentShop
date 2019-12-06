@@ -17,13 +17,15 @@ namespace ConsignmentShopUI
         private List<Item> shoppingCartData = new List<Item>();
         BindingSource itemsBinding = new BindingSource();
         BindingSource cartBinding = new BindingSource();
+        BindingSource vendorsBinding = new BindingSource();
+        public decimal storeProfit = 0;
 
         public ConsignmentShop() // Constructor -- Has no return type
         {
             InitializeComponent();
             SetupData();
 
-            itemsBinding.DataSource = store.Items;
+            itemsBinding.DataSource = store.Items.Where(x => x.Sold == false).ToList();
             itemsListBox.DataSource = itemsBinding;
 
             itemsListBox.DisplayMember = "Display";
@@ -34,6 +36,12 @@ namespace ConsignmentShopUI
 
             shoppingCartListBox.DisplayMember = "Display";
             shoppingCartListBox.ValueMember = "Display";
+
+            vendorsBinding.DataSource = store.Vendors;
+            vendorsListBox.DataSource = vendorsBinding;
+
+            vendorsListBox.DisplayMember = "Display";
+            vendorsListBox.ValueMember = "Display";
 
         }
 
@@ -106,12 +114,28 @@ namespace ConsignmentShopUI
             // Do we remove the item from the items list? - no
             Item selectedItem = (Item)itemsListBox.SelectedItem;
 
-            MessageBox.Show(selectedItem.Title);
+            shoppingCartData.Add(selectedItem);
+            cartBinding.ResetBindings(false);
         }
 
         private void purchaseButton_Click(object sender, EventArgs e)
         {
-             
+            foreach (Item item in shoppingCartData)
+            {
+                item.Sold = true;
+                item.Owner.PaymentDue += (decimal)item.Owner.Commission * item.Price;
+                storeProfit += (1 - (decimal)item.Owner.Commission) * item.Price;
+            }
+
+            shoppingCartData.Clear();
+
+            itemsBinding.DataSource = store.Items.Where(x => x.Sold == false).ToList();
+
+            storeProfitValue.Text = string.Format("${0}", storeProfit);
+
+            cartBinding.ResetBindings(false);
+            itemsBinding.ResetBindings(false);
+            vendorsBinding.ResetBindings(false);
         }
     }
 }
